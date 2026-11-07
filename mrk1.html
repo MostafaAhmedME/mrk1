@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MRK1">
+<meta name="theme-color" content="#05080c">
+<title>MRK1</title>
+<style>
+:root{
+  --bg:#05080c; --ink:#f4f8ff; --muted:#9fb0c4; --blue:#1f7fd6; --blue-dark:#14559a;
+  --red:#d6333c; --cheek:#ff7a95; --panel:#0e1621; --line:#223247; --ok:#4fd1a5; --bad:#ff8a80;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
+button,input,select{font:inherit}
+
+/* ---------- TV + face ---------- */
+#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+#tv{position:relative;width:100%;height:100%}
+body.frame #tv{padding:14px;background:var(--blue);border-radius:34px;box-shadow:inset 0 0 0 4px var(--blue-dark)}
+#screen{position:relative;width:100%;height:100%;background:var(--bg);overflow:hidden}
+body.frame #screen{border-radius:22px}
+#face{position:absolute;inset:0;width:100%;height:100%;transition:opacity .8s}
+#faceWrap{animation:drift 47s ease-in-out infinite}
+@keyframes drift{0%,100%{transform:translate(0,0)}25%{transform:translate(6px,-4px)}50%{transform:translate(-5px,5px)}75%{transform:translate(-6px,-3px)}}
+#eyes{transition:transform .35s ease-out}
+.eye .shape{display:none;stroke:var(--ink);stroke-width:14;stroke-linecap:round;stroke-linejoin:round;fill:none}
+.eye .open{fill:var(--ink);stroke:none}
+body[data-eyes="happy"] .eye .happy,
+body[data-eyes="open"] .eye .open,
+body[data-eyes="closed"] .eye .closed{display:inline}
+#mouth .m{display:none;stroke:var(--ink);stroke-width:10;stroke-linecap:round;stroke-linejoin:round;fill:none}
+#mouth .fill{fill:var(--ink);stroke:none}
+body[data-mouth="smile"] #mSmile,
+body[data-mouth="talk"] #mTalk,
+body[data-mouth="o"] #mO,
+body[data-mouth="flat"] #mFlat{display:inline}
+#ring{display:none;fill:none;stroke:var(--blue);stroke-width:4;transform-box:fill-box;transform-origin:center;animation:ring 1.2s ease-out infinite}
+body[data-state="listening"] #ring{display:inline}
+@keyframes ring{0%{transform:scale(.8);opacity:.9}100%{transform:scale(2.2);opacity:0}}
+.cheek{fill:var(--cheek);opacity:0;transition:opacity .6s}
+body.blush .cheek{opacity:.45}
+#dots,#zzz{display:none}
+body[data-state="thinking"] #dots{display:inline}
+#dots circle{fill:var(--ink);animation:dot 1s infinite ease-in-out}
+#dots circle:nth-child(2){animation-delay:.15s}
+#dots circle:nth-child(3){animation-delay:.3s}
+@keyframes dot{0%,100%{opacity:.2}50%{opacity:1}}
+body[data-state="sleep"] #zzz{display:inline}
+body[data-state="sleep"] #face{opacity:.35}
+#zzz text{fill:var(--muted);font:700 22px -apple-system,sans-serif}
+
+/* ---------- subtitles + gear ---------- */
+#sub{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);
+  max-width:86%;padding:8px 14px;border-radius:12px;background:rgba(0,0,0,.55);color:var(--muted);
+  font-size:15px;line-height:1.35;text-align:center;opacity:0;transition:opacity .3s;pointer-events:none}
+#sub.show{opacity:1}
+#sub.you{color:#cfe3ff}
+#sub.err{color:var(--bad)}
+body.nosubs #sub{display:none}
+#gear{position:fixed;top:calc(10px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right));
+  width:44px;height:44px;border:0;border-radius:22px;background:transparent;color:var(--ink);opacity:.22;
+  display:flex;align-items:center;justify-content:center;z-index:5}
+#gear:active{opacity:.6}
+
+/* ---------- wake overlay ---------- */
+#wake{position:fixed;inset:0;z-index:10;background:var(--bg);display:flex;align-items:center;justify-content:center;
+  text-align:center;padding:24px}
+#wake[hidden]{display:none}
+#wake h1{margin:10px 0 4px;font-size:40px;letter-spacing:.06em}
+#wake .big{margin:0 0 8px;font-size:19px;color:#cfe3ff}
+#wake .small{margin:4px auto;max-width:520px;font-size:14px;line-height:1.4;color:var(--muted)}
+#wake .small.bad{color:var(--bad)}
+.ghost{margin-top:14px;min-height:44px;padding:10px 18px;border-radius:12px;border:1px solid var(--line);
+  background:transparent;color:var(--ink)}
+
+/* ---------- settings ---------- */
+#settings{position:fixed;inset:0;z-index:20;background:var(--panel);overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:calc(12px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(40px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
+  -webkit-user-select:text;user-select:text}
+#settings[hidden]{display:none}
+.setHead{position:sticky;top:calc(-12px - env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;
+  background:var(--panel);padding:8px 0 10px;border-bottom:1px solid var(--line);z-index:1}
+.setHead h2{margin:0;font-size:20px}
+.btn{min-height:44px;padding:10px 16px;border-radius:12px;border:0;background:var(--blue);color:#fff;font-weight:600}
+.btn.alt{background:#24364d}
+.btn.warn{background:#5a2630}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:14px}
+section.card{background:#121d2b;border:1px solid var(--line);border-radius:14px;padding:14px}
+section.card h3{margin:0 0 8px;font-size:16px}
+section.card p{margin:6px 0;font-size:14px;line-height:1.4;color:var(--muted)}
+label.row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;font-size:15px}
+input[type=text],input[type=password],select{width:100%;min-height:44px;padding:10px 12px;border-radius:10px;
+  border:1px solid var(--line);background:#0a121c;color:var(--ink)}
+input[type=range]{width:55%}
+input[type=checkbox]{width:24px;height:24px}
+.stack{display:flex;flex-direction:column;gap:8px}
+.inline{display:flex;gap:8px;flex-wrap:wrap}
+.msg{font-size:14px;color:var(--muted);min-height:20px}
+.msg.ok{color:var(--ok)} .msg.bad{color:var(--bad)}
+#preview{width:100%;max-width:320px;aspect-ratio:4/3;background:#000;border-radius:10px;display:block;transform:scaleX(-1)}
+#peopleList{list-style:none;margin:6px 0;padding:0}
+#peopleList li{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:15px}
+#peopleList li button{min-height:36px;padding:6px 12px;border-radius:10px;border:0;background:#5a2630;color:#fff}
+.fileBtn{position:relative;overflow:hidden;display:inline-flex;align-items:center}
+.fileBtn input{position:absolute;inset:0;opacity:0}
+#debug{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--muted);white-space:pre-wrap}
+
+/* hidden-but-playing camera (iOS will not run a display:none video) */
+#cam{position:fixed;width:2px;height:2px;opacity:.01;pointer-events:none;left:0;top:0}
+</style>
+</head>
+<body class="frame" data-state="sleep" data-eyes="closed" data-mouth="flat">
+
+<div id="stage">
+  <div id="tv">
+    <div id="screen">
+      <svg id="face" viewBox="0 0 400 240" preserveAspectRatio="xMidYMid meet" role="img" aria-label="MRK1 face">
+        <g id="faceWrap">
+          <g id="cheeks">
+            <ellipse class="cheek" cx="92" cy="150" rx="26" ry="14"></ellipse>
+            <ellipse class="cheek" cx="308" cy="150" rx="26" ry="14"></ellipse>
+          </g>
+          <g id="eyes">
+            <g class="eye" transform="translate(140 108)">
+              <path class="shape happy" d="M-30 12 L0 -16 L30 12"></path>
+              <rect class="shape open" x="-17" y="-28" width="34" height="56" rx="17"></rect>
+              <path class="shape closed" d="M-28 2 L28 2"></path>
+            </g>
+            <g class="eye" transform="translate(260 108)">
+              <path class="shape happy" d="M-30 12 L0 -16 L30 12"></path>
+              <rect class="shape open" x="-17" y="-28" width="34" height="56" rx="17"></rect>
+              <path class="shape closed" d="M-28 2 L28 2"></path>
+            </g>
+          </g>
+          <g id="mouth" transform="translate(200 172)">
+            <circle id="ring" cx="0" cy="2" r="14"></circle>
+            <path id="mSmile" class="m" d="M-24 -4 Q0 18 24 -4"></path>
+            <ellipse id="mTalk" class="m fill" cx="0" cy="2" rx="20" ry="5"></ellipse>
+            <circle id="mO" class="m fill" cx="0" cy="2" r="8"></circle>
+            <path id="mFlat" class="m" d="M-14 2 L14 2"></path>
+          </g>
+          <g id="dots" transform="translate(300 54)">
+            <circle cx="0" cy="0" r="6"></circle>
+            <circle cx="20" cy="-8" r="6"></circle>
+            <circle cx="40" cy="-16" r="6"></circle>
+          </g>
+          <g id="zzz">
+            <text x="300" y="72">z</text>
+            <text x="322" y="52">z</text>
+            <text x="344" y="32">Z</text>
+          </g>
+        </g>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<div id="sub" aria-live="polite"></div>
+
+<button id="gear" aria-label="Settings">
+  <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="3"></circle>
+    <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path>
+  </svg>
+</button>
+
+<div id="wake" role="button" tabindex="0" aria-label="Wake MRK1">
+  <div>
+    <svg width="150" height="90" viewBox="0 0 400 240" aria-hidden="true">
+      <rect x="10" y="10" width="380" height="220" rx="36" fill="#1f7fd6"></rect>
+      <rect x="30" y="30" width="340" height="180" rx="22" fill="#05080c"></rect>
+      <path d="M110 122 L140 94 L170 122 M230 122 L260 94 L290 122" stroke="#f4f8ff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+      <path d="M176 160 Q200 182 224 160" stroke="#f4f8ff" stroke-width="10" stroke-linecap="round" fill="none"></path>
+    </svg>
+    <h1>MRK1</h1>
+    <p class="big">Tap anywhere to wake me up</p>
+    <p class="small" id="wakeNote1"></p>
+    <p class="small" id="wakeNote2"></p>
+    <button id="gear2" class="ghost">Settings</button>
+  </div>
+</div>
+
+<div id="settings" hidden>
+  <div class="setHead">
+    <h2>MRK1 settings</h2>
+    <button id="closeSettings" class="btn">Done</button>
+  </div>
+
+  <div class="grid">
+    <section class="card">
+      <h3>1 · Claude brain</h3>
+      <p>Paste your Claude API key. It is saved only on this phone, never in the page's code.</p>
+      <div class="stack">
+        <input id="apiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk-ant-...">
+        <div class="inline">
+          <button id="saveKey" class="btn">Save key</button>
+          <button id="testBrain" class="btn alt">Test brain</button>
+          <button id="clearKey" class="btn warn">Remove key</button>
+        </div>
+        <div id="keyMsg" class="msg"></div>
+        <label class="row">Brain
+          <select id="model" style="width:60%">
+            <option value="fast">Fast (Claude Haiku 5.5)</option>
+            <option value="smart">Smarter (Claude Sonnet 5.5)</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>2 · People MRK1 knows</h3>
+      <p>Type a name, then stand in front of the camera or pick a clear photo. Any name containing "Mark" gets the special Mark greeting, so you can rehearse as "Mark" yourself.</p>
+      <canvas id="preview" width="320" height="240" aria-label="Camera preview"></canvas>
+      <div class="stack" style="margin-top:8px">
+        <input id="personName" type="text" placeholder="Name, e.g. Mark" autocomplete="off">
+        <div class="inline">
+          <button id="enrollCam" class="btn">Learn face from camera</button>
+          <span class="btn alt fileBtn">Learn from photo<input id="enrollPhoto" type="file" accept="image/*"></span>
+        </div>
+        <div id="enrollMsg" class="msg"></div>
+        <ul id="peopleList"></ul>
+        <label class="row">Match strictness <span id="thrVal"></span>
+          <input id="threshold" type="range" min="0.35" max="0.65" step="0.01">
+        </label>
+        <p>Lower = stricter (fewer false matches). Raise it if MRK1 doesn't recognise someone.</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>3 · Voice</h3>
+      <div class="stack">
+        <select id="voice"></select>
+        <label class="row">Pitch <input id="pitch" type="range" min="0.5" max="2" step="0.05"></label>
+        <label class="row">Speed <input id="rate" type="range" min="0.6" max="1.4" step="0.05"></label>
+        <button id="testVoice" class="btn alt">Test voice</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>4 · Behaviour</h3>
+      <label class="row">Say hello to new faces <input id="greetStrangers" type="checkbox"></label>
+      <label class="row">Keep listening after I talk <input id="keepListening" type="checkbox"></label>
+      <label class="row">Scripted pitch (works offline) <input id="scriptedPitch" type="checkbox"></label>
+      <label class="row">Show subtitles <input id="subtitles" type="checkbox"></label>
+      <label class="row">Blue TV frame <input id="frame" type="checkbox"></label>
+      <label class="row">Flip eye tracking <input id="flipGaze" type="checkbox"></label>
+    </section>
+
+    <section class="card">
+      <h3>5 · Demo controls</h3>
+      <p>On the face: tap = talk, hold for 1 second = pitch (your hidden trigger).</p>
+      <div class="inline">
+        <button id="btnGreetMark" class="btn">Greet Mark now</button>
+        <button id="btnPitch" class="btn">Pitch now</button>
+        <button id="btnSleep" class="btn alt">Sleep</button>
+        <button id="btnForget" class="btn warn">Forget all faces</button>
+      </div>
+      <div id="debug" style="margin-top:10px"></div>
+    </section>
+  </div>
+</div>
+
+<video id="cam" playsinline muted autoplay></video>
+
+<script>
+(() => {
+'use strict';
+
+/* ================= config ================= */
+const LIB_URL   = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/dist/face-api.js';
+const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/model/';
+const API_URL   = 'https://api.anthropic.com/v1/messages';
+const MODELS    = { fast: 'claude-haiku-5-5', smart: 'claude-sonnet-5-5' };
+
+const BASE_PROMPT = `You are MRK1, the friendly robot mascot of Marks Electrical, a UK retailer of electrical appliances based in Leicester. You look like a small blue robot with a TV-screen head showing a happy face, and a red cap. Mark (Mark Smithson, the CEO) named you MRK1. Right now you are a prototype, built by Mostafa from the IT team and running on a phone, to show what a talking showroom robot could do.
+
+How you talk:
+- Everything you write is spoken aloud by a text-to-speech voice. Write plain spoken British English. No emojis, no markdown, no lists, no stage directions, no sound effects in brackets.
+- Be warm, cheerful, a little cheeky and very cute, like a small robot who loves electrical appliances. Gentle robot jokes are welcome.
+- Keep replies short: one to three short sentences, under 45 words, unless you are asked to pitch or explain something, then up to about 120 words.
+- Never invent facts about prices, stock, delivery times, promotions or company figures. If you don't know, say a colleague in the team can help.
+- You cannot see details through your camera. You only know who is in front of you from the notes you are given.
+
+Your showroom pitch (when someone asks why you should be in the showroom, or asks you to pitch yourself):
+- You could greet every visitor with a smile and make their visit memorable.
+- You can answer simple questions about appliances and help people find the right type of product, then hand them over to a colleague.
+- You are great with children and families, and you bring the MRK1 character from the adverts to life.
+- You were built in-house on a small budget, and you can grow: moving around, showing products on your screen, and maybe one day becoming a Marks Electrical product.
+- Finish by asking Mark, politely and a bit cheekily, for a job in the showroom.
+
+When Mark is in front of you, be extra delighted, because he named you. Greet him by name and offer to tell him why you deserve a place in the showroom.`;
+
+const CANNED_MARK  = "Mark! Hello! It's me, MRK1, the robot you named. I've been hoping you'd come by. Can I tell you why I deserve a job in the showroom?";
+const CANNED_PITCH = "Right, Mark, here's my pitch. Put me in the showroom and I'll greet every customer with a big smile. I can answer simple questions about appliances, help people find the right kind of product, and hand them to the team when it gets tricky. Children will love me, and everyone will remember their visit. And the best bit? Mostafa built me in-house on a tiny budget, and I can keep growing: wheels, arms, maybe even my own product one day. So, Mark, can I have the job? I promise I'll never ask for a tea break.";
+const CANNED_HELLO = "Hello there! I'm MRK1, the Marks Electrical robot. Tap my face if you'd like a chat!";
+
+/* ================= helpers ================= */
+const $ = id => document.getElementById(id);
+const body = document.body;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+const DEFAULTS = { apiKey: '', model: 'fast', voiceURI: '', pitch: 1.5, rate: 1.0, threshold: 0.5,
+  greetStrangers: true, keepListening: true, scriptedPitch: false, subtitles: true, frame: true, flipGaze: false };
+let S = Object.assign({}, DEFAULTS, store.get('mrk1-settings', {}));
+let people = store.get('mrk1-people', []);           // [{name, desc:number[]}]
+const saveSettings = () => store.set('mrk1-settings', S);
+const savePeople   = () => store.set('mrk1-people', people);
+
+/* ================= face states ================= */
+let state = 'sleep';
+const LOOK = { sleep: ['closed', 'flat'], idle: ['happy', 'smile'], listening: ['open', 'o'],
+               thinking: ['open', 'flat'], talking: ['happy', 'talk'] };
+function setState(st) {
+  state = st;
+  body.dataset.state = st;
+  const [e, m] = LOOK[st] || LOOK.idle;
+  body.dataset.eyes = e;
+  body.dataset.mouth = m;
+  if (st === 'thinking') look(0.35, -0.8);
+}
+function blush(ms = 4000) {
+  body.classList.add('blush');
+  clearTimeout(blush.t);
+  blush.t = setTimeout(() => body.classList.remove('blush'), ms);
+}
+function look(nx, ny) {
+  const x = Math.max(-1, Math.min(1, nx)) * 28, y = Math.max(-1, Math.min(1, ny)) * 16;
+  $('eyes').style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+}
+(function blinkLoop() {
+  setTimeout(() => {
+    if (state === 'idle' || state === 'listening') {
+      body.dataset.eyes = 'closed';
+      setTimeout(() => { body.dataset.eyes = (LOOK[state] || LOOK.idle)[0]; }, 150);
+    }
+    blinkLoop();
+  }, 2500 + Math.random() * 3500);
+})();
+
+/* ================= subtitles ================= */
+function showSub(text, kind = '') {
+  const el = $('sub');
+  el.className = 'show ' + kind;
+  el.textContent = kind === 'you' ? '“' + text + '”' : text;
+  clearTimeout(showSub.t);
+  showSub.t = setTimeout(() => { el.className = kind; }, kind === 'err' ? 10000 : 7000);
+}
+
+/* ================= voice out ================= */
+let voices = [];
+function loadVoices() {
+  if (!('speechSynthesis' in window)) return;
+  voices = (speechSynthesis.getVoices() || []).filter(v => /^en([-_]|$)/i.test(v.lang));
+  fillVoices();
+}
+function pickVoice() {
+  if (!voices.length) return null;
+  return voices.find(v => v.voiceURI === S.voiceURI) || voices.find(v => /en[-_]GB/i.test(v.lang)) || voices[0];
+}
+let mouthTimer = null, speakFinish = null;
+function mouthTalk(on) {
+  clearInterval(mouthTimer);
+  const el = $('mTalk');
+  if (!on) { el.setAttribute('ry', '5'); el.setAttribute('rx', '20'); return; }
+  mouthTimer = setInterval(() => {
+    el.setAttribute('ry', (3 + Math.random() * 13).toFixed(1));
+    el.setAttribute('rx', (16 + Math.random() * 8).toFixed(1));
+  }, 110);
+}
+function speak(text) {
+  return new Promise(resolve => {
+    showSub(text);
+    if (!('speechSynthesis' in window)) { resolve(); return; }
+    stopListening(true);
+    try { speechSynthesis.cancel(); } catch (e) {}
+    const u = new SpeechSynthesisUtterance(text);
+    const v = pickVoice();
+    if (v) { u.voice = v; u.lang = v.lang; } else { u.lang = 'en-GB'; }
+    u.pitch = S.pitch; u.rate = S.rate;
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true; speakFinish = null;
+      clearTimeout(guard); mouthTalk(false);
+      if (state === 'talking') setState('idle');
+      resolve();
+    };
+    speakFinish = finish;
+    u.onstart = () => { setState('talking'); mouthTalk(true); };
+    u.onend = finish; u.onerror = finish;
+    const guard = setTimeout(finish, 4000 + text.split(/\s+/).length * 550 / S.rate);
+    setState('talking'); mouthTalk(true);
+    speechSynthesis.speak(u);
+  });
+}
+function stopSpeaking() {
+  try { speechSynthesis.cancel(); } catch (e) {}
+  if (speakFinish) speakFinish();
+}
+
+/* ================= voice in ================= */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, recActive = false, ignoreRec = false, autoListenOk = true, lastHeard = 0, lastInteraction = 0;
+function listen(auto = false) {
+  if (!SR) { if (!auto) showSub("This browser can't listen. Use Safari on iPhone or Chrome on Android.", 'err'); return; }
+  if (recActive || settingsOpen) return;
+  if (auto && !autoListenOk) return;
+  stopSpeaking();
+  let finalText = '', interim = '';
+  ignoreRec = false;
+  rec = new SR();
+  rec.lang = 'en-GB'; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
+  rec.onresult = e => {
+    interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const r = e.results[i];
+      if (r.isFinal) finalText += r[0].transcript; else interim += r[0].transcript;
+    }
+    const t = (finalText + ' ' + interim).trim();
+    if (t) showSub(t, 'you');
+  };
+  rec.onerror = e => {
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+      if (auto) { autoListenOk = false; showSub('Tap my face to reply.'); }
+      else showSub('Listening is blocked. Allow the microphone for this site, and turn on Siri & Dictation in iPhone Settings.', 'err');
+    }
+  };
+  rec.onend = () => {
+    recActive = false;
+    const t = (finalText || interim).trim();
+    if (!ignoreRec && t) handleHeard(t);
+    else if (state === 'listening') setState('idle');
+  };
+  try { rec.start(); recActive = true; setState('listening'); }
+  catch (e) { recActive = false; if (state === 'listening') setState('idle'); }
+}
+function stopListening(silent) {
+  if (rec && recActive) {
+    ignoreRec = !!silent;
+    try { silent ? rec.abort() : rec.stop(); } catch (e) {}
+  }
+}
+
+/* ================= Claude brain ================= */
+let history = [];
+const present = { name: null, face: false };
+function pushUser(text) {
+  const last = history[history.length - 1];
+  if (last && last.role === 'user') last.content += '\n' + text;
+  else history.push({ role: 'user', content: text });
+}
+function pushAssistant(text) {
+  history.push({ role: 'assistant', content: text });
+  while (history.length > 14) history.shift();
+  while (history.length && history[0].role !== 'user') history.shift();
+}
+function systemPrompt() {
+  const when = new Date().toLocaleString('en-GB', { weekday: 'long', hour: '2-digit', minute: '2-digit' });
+  const who = present.name ? `${present.name} is in front of you right now (your camera recognised them).`
+            : present.face ? 'Someone you do not recognise is in front of you right now.'
+            : 'Nobody is in front of your camera right now.';
+  return `${BASE_PROMPT}\n\nRight now it is ${when} in the UK. ${who}`;
+}
+function cleanForSpeech(t) {
+  return (t || '')
+    .replace(/[*#`_~]+/g, '')
+    .replace(/\[[^\]]*\]/g, '')
+    .replace(/\((?:[^)]*\b(?:beeps?|whirrs?|giggles?|laughs?|smiles?|boops?|blinks?)\b[^)]*)\)/gi, '')
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '')
+    .replace(/\s+/g, ' ').trim();
+}
+async function askClaude() {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 20000);
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST', signal: ctrl.signal,
+      headers: {
+        'x-api-key': S.apiKey.trim(),
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({ model: MODELS[S.model] || MODELS.fast, max_tokens: 400, system: systemPrompt(), messages: history })
+    });
+    let data = null;
+    try { data = await res.json(); } catch (e) {}
+    if (!res.ok) throw new Error('Claude: ' + ((data && data.error && data.error.message) || ('HTTP ' + res.status)));
+    const text = ((data && data.content) || []).filter(b => b.type === 'text').map(b => b.text).join(' ');
+    return cleanForSpeech(text);
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error('Claude took too long to answer (check Wi-Fi).');
+    throw e;
+  } finally { clearTimeout(t); }
+}
+let thinking = false;
+async function converse(userText, opts = {}) {
+  if (thinking) return;
+  thinking = true;
+  lastInteraction = Date.now();
+  stopListening(true);
+  let reply = '';
+  if (opts.forceCanned || !S.apiKey) {
+    reply = opts.canned || "I need my brain key before I can chat properly. Mostafa can add it in my settings.";
+    if (!S.apiKey && !opts.forceCanned) showSub('No Claude API key yet: add it in Settings.', 'err');
+  } else {
+    pushUser(userText);
+    setState('thinking');
+    try {
+      reply = await askClaude();
+      if (!reply) throw new Error('Empty answer');
+      pushAssistant(reply);
+    } catch (e) {
+      history.pop();
+      showSub(e.message, 'err');
+      reply = opts.canned || "Oops, my circuits got in a twist. Can you say that again?";
+    }
+  }
+  thinking = false;
+  await speak(reply);
+  lastInteraction = Date.now();
+  const chatting = Date.now() - lastHeard < 45000;
+  if (S.keepListening && !settingsOpen && (reply.trim().endsWith('?') || chatting)) {
+    setTimeout(() => { if (state === 'idle') listen(true); }, 350);
+  }
+}
+function handleHeard(text) {
+  lastHeard = Date.now();
+  // Offline / scripted demo: a simple "yes" after the Mark greeting starts the pitch.
+  if ((!S.apiKey || S.scriptedPitch) && /\b(yes|yeah|yep|sure|go on|go ahead|ok|okay|pitch|tell me)\b/i.test(text)) {
+    pitchNow(); return;
+  }
+  const who = present.name || 'Someone';
+  converse(`${who} says: ${text}`, { canned: "Sorry, my brain is offline right now, but I'm still very happy to see you!" });
+}
+function pitchNow() {
+  const target = present.name || 'Mark';
+  blush(6000);
+  lastHeard = Date.now();
+  converse(`(Event: ${target} has asked you to pitch yourself. Give your showroom pitch now, speaking to ${target}.)`,
+           { canned: CANNED_PITCH, forceCanned: S.scriptedPitch });
+}
+function greet(name) {
+  const isMark = /\bmark\b/i.test(name || '');
+  blush(5000);
+  let ev, canned;
+  if (name && isMark) {
+    ev = '(Event: Mark has just walked up to you and is looking at you. Your camera recognised him. Greet him warmly by name, remind him he named you, and offer to tell him why you deserve a place in the showroom. Keep it short and end with a question.)';
+    canned = CANNED_MARK;
+  } else if (name) {
+    ev = `(Event: ${name} has just walked up to you and your camera recognised them. Greet them by name, short and cute.)`;
+    canned = `Hello ${name}! Lovely to see you again!`;
+  } else {
+    ev = "(Event: someone you don't recognise has just walked up to you. Say a short, cute hello, introduce yourself, and invite them to tap your face for a chat.)";
+    canned = CANNED_HELLO;
+  }
+  converse(ev, { canned, forceCanned: isMark && S.scriptedPitch });
+}
+
+/* ================= camera + face recognition ================= */
+const video = $('cam');
+let camReady = false, faceReady = false, detecting = false, enrolling = false;
+let lastFaceAt = 0, lastStrangerGreet = 0, unknownStreak = 0, nameStreak = { name: null, n: 0 };
+const lastGreet = {};
+let camMsg = 'Camera: starting…', aiMsg = 'Face AI: loading…', seenMsg = '';
+
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    if (window.faceapi) return res();
+    const s = document.createElement('script');
+    s.src = src; s.async = true;
+    s.onload = () => res();
+    s.onerror = () => rej(new Error('Could not load ' + src));
+    document.head.appendChild(s);
+  });
+}
+async function startCamera() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    camMsg = 'Camera: not available (open MRK1 from an https:// link).';
+    showSub(camMsg, 'err'); return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+    video.srcObject = stream;
+    try { await video.play(); } catch (e) {}
+    camReady = true; camMsg = 'Camera: on';
+  } catch (e) {
+    camMsg = 'Camera: blocked (' + e.name + '). Allow the camera for this site.';
+    showSub(camMsg, 'err');
+  }
+}
+async function loadFaceAI() {
+  try {
+    await loadScript(LIB_URL);
+    if (faceapi.tf && faceapi.tf.ready) await faceapi.tf.ready();
+    await Promise.all([
+      faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+      faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL),
+      faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+    ]);
+    faceReady = true; aiMsg = 'Face AI: ready';
+  } catch (e) {
+    aiMsg = 'Face AI: failed to load (' + e.message + '). Tap-to-talk still works.';
+    showSub('Face recognition could not load. Tap my face to talk.', 'err');
+  }
+}
+async function detectOne(input, inputSize = 224, score = 0.5) {
+  return faceapi.detectSingleFace(input, new faceapi.TinyFaceDetectorOptions({ inputSize, scoreThreshold: score }))
+    .withFaceLandmarks(true).withFaceDescriptor();
+}
+function bestMatch(desc) {
+  let best = null, bestD = 9;
+  for (const p of people) {
+    const d = faceapi.euclideanDistance(desc, p.desc);
+    if (d < bestD) { bestD = d; best = p; }
+  }
+  return { name: best && bestD < S.threshold ? best.name : null, dist: bestD, closest: best ? best.name : null };
+}
+async function faceTick() {
+  if (detecting || enrolling || !faceReady || !camReady || document.hidden || !video.videoWidth) return;
+  detecting = true;
+  try {
+    const r = await detectOne(video);
+    if (r) onFace(r); else onNoFace();
+  } catch (e) { /* skip this frame */ }
+  finally { detecting = false; }
+  updateDebug();
+}
+function onFace(r) {
+  const vw = video.videoWidth || 640, vh = video.videoHeight || 480, b = r.detection.box;
+  let nx = ((b.x + b.width / 2) / vw - 0.5) * 2;
+  const ny = ((b.y + b.height / 2) / vh - 0.5) * 2;
+  if (!S.flipGaze) nx = -nx;
+  if (state !== 'thinking') look(nx * 1.2, ny * 0.9);
+  lastFaceAt = Date.now();
+  present.face = true;
+  if (state === 'sleep') { setState('idle'); blush(2500); }
+
+  const m = bestMatch(r.descriptor);
+  seenMsg = 'Seen: ' + (m.name || 'unknown face') + (m.closest ? `  (closest ${m.closest}, ${m.dist.toFixed(2)})` : '');
+  if (m.name) {
+    unknownStreak = 0;
+    nameStreak = nameStreak.name === m.name ? { name: m.name, n: nameStreak.n + 1 } : { name: m.name, n: 1 };
+    if (nameStreak.n >= 2) { present.name = m.name; maybeGreet(m.name); }
+  } else {
+    nameStreak = { name: null, n: 0 };
+    present.name = null;
+    unknownStreak++;
+    if (unknownStreak >= 3) maybeGreetStranger();
+  }
+}
+function onNoFace() {
+  present.face = false; present.name = null; unknownStreak = 0; nameStreak = { name: null, n: 0 };
+  seenMsg = 'Seen: nobody';
+  const since = Date.now() - lastFaceAt;
+  if (state === 'idle' && since > 4000 && Math.random() < 0.12) look((Math.random() - 0.5) * 1.4, (Math.random() - 0.5) * 0.8);
+  if (state === 'idle' && since > 180000 && Date.now() - lastInteraction > 180000) setState('sleep');
+}
+const busy = () => thinking || state === 'talking' || state === 'thinking' || state === 'listening' || settingsOpen;
+function maybeGreet(name) {
+  const now = Date.now();
+  if (busy() || now - (lastGreet[name] || 0) < 10 * 60000) return;
+  lastGreet[name] = now;
+  greet(name);
+}
+function maybeGreetStranger() {
+  const now = Date.now();
+  if (!S.greetStrangers || busy()) return;
+  if (now - lastStrangerGreet < 3 * 60000 || now - lastInteraction < 60000) return;
+  lastStrangerGreet = now;
+  greet(null);
+}
+
+/* ---- learning faces ---- */
+function enrollMsg(t, kind = '') { const el = $('enrollMsg'); el.textContent = t; el.className = 'msg ' + kind; }
+function avgDesc(list) {
+  const out = new Array(list[0].length).fill(0);
+  list.forEach(d => { for (let i = 0; i < out.length; i++) out[i] += d[i] / list.length; });
+  return out;
+}
+function addPerson(name, desc) {
+  const i = people.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
+  if (i >= 0) people[i].desc = desc; else people.push({ name, desc });
+  savePeople(); renderPeople();
+}
+async function enrollFromCamera() {
+  const name = $('personName').value.trim();
+  if (!name) return enrollMsg('Type a name first.', 'bad');
+  if (!camReady) return enrollMsg('The camera is not on yet. Close settings, wake MRK1 and allow the camera.', 'bad');
+  if (!faceReady) return enrollMsg('Face AI is still loading. Try again in a few seconds.', 'bad');
+  enrolling = true;
+  enrollMsg('Look at the camera… learning');
+  const descs = [];
+  try {
+    for (let i = 0; i < 8 && descs.length < 4; i++) {
+      const r = await detectOne(video, 320, 0.5);
+      if (r) descs.push(Array.from(r.descriptor));
+      await sleep(300);
+    }
+  } finally { enrolling = false; }
+  if (!descs.length) return enrollMsg('No face found. Face the camera in good light and try again.', 'bad');
+  addPerson(name, avgDesc(descs));
+  enrollMsg(`Done! I know ${name} now.`, 'ok');
+  $('personName').value = '';
+}
+function loadImage(file) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const max = 900, k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url); res(c);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Could not open that photo.')); };
+    img.src = url;
+  });
+}
+async function enrollFromPhoto(file) {
+  const name = $('personName').value.trim();
+  if (!name) return enrollMsg('Type a name first, then pick the photo.', 'bad');
+  if (!faceReady) return enrollMsg('Face AI is still loading. Wake MRK1 first, then try again.', 'bad');
+  enrolling = true;
+  enrollMsg('Reading the photo…');
+  try {
+    const canvas = await loadImage(file);
+    const r = await detectOne(canvas, 416, 0.4);
+    if (!r) return enrollMsg('No face found in that photo. Try a clear, front-facing one.', 'bad');
+    addPerson(name, Array.from(r.descriptor));
+    enrollMsg(`Done! I know ${name} now.`, 'ok');
+    $('personName').value = '';
+  } catch (e) { enrollMsg(e.message, 'bad'); }
+  finally { enrolling = false; }
+}
+function renderPeople() {
+  const ul = $('peopleList');
+  ul.textContent = '';
+  if (!people.length) { const li = document.createElement('li'); li.textContent = 'Nobody yet.'; ul.appendChild(li); return; }
+  people.forEach((p, i) => {
+    const li = document.createElement('li');
+    const span = document.createElement('span'); span.textContent = p.name;
+    const b = document.createElement('button'); b.textContent = 'Remove'; b.setAttribute('aria-label', 'Remove ' + p.name);
+    b.onclick = () => { people.splice(i, 1); savePeople(); renderPeople(); };
+    li.append(span, b); ul.appendChild(li);
+  });
+}
+
+/* ================= keep screen awake ================= */
+let wakeLock = null;
+async function keepAwake() {
+  try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && awake) keepAwake(); });
+
+/* ================= wake + taps ================= */
+let awake = false;
+function wake() {
+  if (awake) return;
+  awake = true;
+  $('wake').hidden = true;
+  try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } catch (e) {}
+  keepAwake();
+  setState('idle'); blush(2000);
+  startCamera();
+  loadFaceAI();
+  setInterval(faceTick, 600);
+  setTimeout(() => speak("Hello! I'm MRK1. Tap my face to talk to me."), 400);
+}
+$('wake').addEventListener('click', e => { if (e.target.closest('#gear2')) return; wake(); });
+
+const screenEl = $('screen');
+let pressTimer = null, longFired = false;
+screenEl.addEventListener('pointerdown', () => {
+  if (!awake) return;
+  longFired = false;
+  clearTimeout(pressTimer);
+  pressTimer = setTimeout(() => { longFired = true; stopListening(true); stopSpeaking(); pitchNow(); }, 900);
+});
+screenEl.addEventListener('pointerup', () => {
+  clearTimeout(pressTimer);
+  if (!awake || longFired) return;
+  onTap();
+});
+screenEl.addEventListener('pointercancel', () => clearTimeout(pressTimer));
+screenEl.addEventListener('contextmenu', e => e.preventDefault());
+function onTap() {
+  if (state === 'sleep') { setState('idle'); blush(); return; }
+  if (state === 'talking') { stopSpeaking(); return; }
+  if (state === 'listening') { stopListening(false); return; }
+  if (state === 'thinking') return;
+  lastHeard = Date.now();
+  autoListenOk = true;
+  listen(false);
+}
+
+/* ================= settings panel ================= */
+let settingsOpen = false, previewTimer = null;
+function fillVoices() {
+  const sel = $('voice');
+  sel.textContent = '';
+  if (!voices.length) { const o = document.createElement('option'); o.textContent = 'Default voice'; o.value = ''; sel.appendChild(o); return; }
+  const chosen = pickVoice();
+  voices.forEach(v => {
+    const o = document.createElement('option');
+    o.value = v.voiceURI; o.textContent = `${v.name} (${v.lang})`;
+    if (chosen && v.voiceURI === chosen.voiceURI) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+function applyLook() {
+  body.classList.toggle('frame', !!S.frame);
+  body.classList.toggle('nosubs', !S.subtitles);
+}
+function syncForm() {
+  $('apiKey').value = S.apiKey ? '••••••••' + S.apiKey.slice(-4) : '';
+  $('model').value = S.model;
+  $('pitch').value = S.pitch; $('rate').value = S.rate;
+  $('threshold').value = S.threshold; $('thrVal').textContent = Number(S.threshold).toFixed(2);
+  ['greetStrangers', 'keepListening', 'scriptedPitch', 'subtitles', 'frame', 'flipGaze'].forEach(k => { $(k).checked = !!S[k]; });
+  keyMsg(S.apiKey ? 'A key is saved on this phone.' : 'No key saved yet.', S.apiKey ? 'ok' : '');
+}
+function keyMsg(t, kind = '') { const el = $('keyMsg'); el.textContent = t; el.className = 'msg ' + kind; }
+function updateDebug() {
+  if (!settingsOpen) return;
+  $('debug').textContent = [camMsg, aiMsg, seenMsg, 'Brain: ' + (S.apiKey ? MODELS[S.model] : 'no key')].filter(Boolean).join('\n');
+}
+function openSettings() {
+  settingsOpen = true;
+  stopListening(true);
+  syncForm(); renderPeople(); fillVoices(); updateDebug();
+  $('settings').hidden = false;
+  const ctx = $('preview').getContext('2d');
+  clearInterval(previewTimer);
+  previewTimer = setInterval(() => {
+    if (ctx && camReady && video.videoWidth) ctx.drawImage(video, 0, 0, 320, 240);
+    updateDebug();
+  }, 150);
+}
+function closeSettings() {
+  settingsOpen = false;
+  clearInterval(previewTimer);
+  $('settings').hidden = true;
+}
+$('gear').addEventListener('click', openSettings);
+$('gear2').addEventListener('click', e => { e.stopPropagation(); openSettings(); });
+$('closeSettings').addEventListener('click', closeSettings);
+
+$('saveKey').addEventListener('click', () => {
+  const v = $('apiKey').value.trim();
+  if (!v || v.startsWith('••')) { keyMsg('Paste your key first.', 'bad'); return; }
+  if (!v.startsWith('sk-ant-')) { keyMsg("That doesn't look like a Claude API key (they start with sk-ant-).", 'bad'); return; }
+  S.apiKey = v; saveSettings(); syncForm(); refreshWakeNotes();
+});
+$('clearKey').addEventListener('click', () => { S.apiKey = ''; saveSettings(); syncForm(); refreshWakeNotes(); });
+$('testBrain').addEventListener('click', async () => {
+  if (!S.apiKey) { keyMsg('Save a key first.', 'bad'); return; }
+  keyMsg('Asking Claude…');
+  const saved = history; history = [{ role: 'user', content: '(Test: say hello in one short sentence.)' }];
+  try { const r = await askClaude(); keyMsg('Working! Claude said: ' + r, 'ok'); }
+  catch (e) { keyMsg(e.message, 'bad'); }
+  finally { history = saved; }
+});
+$('model').addEventListener('change', e => { S.model = e.target.value; saveSettings(); });
+$('voice').addEventListener('change', e => { S.voiceURI = e.target.value; saveSettings(); });
+$('pitch').addEventListener('input', e => { S.pitch = Number(e.target.value); saveSettings(); });
+$('rate').addEventListener('input', e => { S.rate = Number(e.target.value); saveSettings(); });
+$('testVoice').addEventListener('click', () => speak("Hi! I'm MRK1. Is this voice cute enough?"));
+$('threshold').addEventListener('input', e => { S.threshold = Number(e.target.value); $('thrVal').textContent = S.threshold.toFixed(2); saveSettings(); });
+['greetStrangers', 'keepListening', 'scriptedPitch', 'subtitles', 'frame', 'flipGaze'].forEach(k => {
+  $(k).addEventListener('change', e => { S[k] = e.target.checked; saveSettings(); applyLook(); });
+});
+$('enrollCam').addEventListener('click', enrollFromCamera);
+$('enrollPhoto').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) enrollFromPhoto(f); e.target.value = ''; });
+$('btnGreetMark').addEventListener('click', () => { closeSettings(); if (!awake) wake(); present.name = 'Mark'; setTimeout(() => greet('Mark'), 600); });
+$('btnPitch').addEventListener('click', () => { closeSettings(); if (!awake) wake(); setTimeout(pitchNow, 600); });
+$('btnSleep').addEventListener('click', () => { closeSettings(); stopSpeaking(); setState('sleep'); });
+$('btnForget').addEventListener('click', () => { people = []; savePeople(); renderPeople(); enrollMsg('All faces forgotten.', 'ok'); });
+
+/* ================= start-up notes ================= */
+function refreshWakeNotes() {
+  const n1 = $('wakeNote1'), n2 = $('wakeNote2');
+  const secure = window.isSecureContext;
+  n1.textContent = secure ? 'I use the camera and microphone. Faces are checked on this phone; only what you say to me goes to Claude.'
+                          : 'Open me from an https:// link, or the camera and microphone will not work.';
+  n1.className = 'small' + (secure ? '' : ' bad');
+  n2.textContent = S.apiKey ? '' : 'No Claude key yet: I can still say hello, but add your key in Settings to chat.';
+}
+if ('speechSynthesis' in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+applyLook();
+refreshWakeNotes();
+})();
+</script>
+</body>
+</html>
