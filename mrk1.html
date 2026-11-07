@@ -113,6 +113,81 @@ input[type=checkbox]{width:24px;height:24px}
 .fileBtn input{position:absolute;inset:0;opacity:0}
 #debug{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--muted);white-space:pre-wrap}
 
+textarea{width:100%;min-height:96px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#0a121c;color:var(--ink);font:inherit}
+
+/* ---------- ME logo ---------- */
+.logoBadge{display:none;position:absolute;left:50%;bottom:7px;transform:translateX(-50%);height:34px;padding:4px 14px;
+  border-radius:10px;align-items:center;justify-content:center;z-index:4;transition:opacity .8s}
+body.logo.frame .logoBadge{display:flex}
+body.logo.frame #tv{padding-bottom:50px}
+body.logo:not(.frame) .logoBadge{display:flex;left:12px;top:10px;bottom:auto;transform:none;height:28px;opacity:.7}
+body.logowhite .logoBadge,body.logowhite .pLogo{background:#fff}
+.meLogo{height:100%;max-width:220px;object-fit:contain;display:block}
+.logoBadge .txt,.pLogo .txt{display:none;font-weight:800;letter-spacing:.02em;color:var(--red);font-size:17px;white-space:nowrap}
+.logofail .meLogo{display:none}
+.logofail .txt{display:inline}
+body[data-state="sleep"] .logoBadge{opacity:.35}
+
+/* ---------- product showcase ---------- */
+#product{position:absolute;inset:0;z-index:2;display:grid;grid-template-columns:52% 48%;background:#0b1420}
+#product[hidden]{display:none}
+@media (orientation:portrait){#product{grid-template-columns:1fr;grid-template-rows:42% 58%}}
+#pView{position:relative;margin:10px;border-radius:16px;background:#fff;overflow:hidden;touch-action:none;
+  display:flex;align-items:center;justify-content:center;perspective:900px;cursor:grab}
+#pImg{max-width:92%;max-height:84%;object-fit:contain;pointer-events:none;-webkit-user-drag:none}
+#pImg.turnL{animation:turnL .45s ease-out}
+#pImg.turnR{animation:turnR .45s ease-out}
+@keyframes turnL{0%{transform:rotateY(18deg);opacity:.55}100%{transform:none;opacity:1}}
+@keyframes turnR{0%{transform:rotateY(-18deg);opacity:.55}100%{transform:none;opacity:1}}
+#pHint{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);padding:5px 12px;border-radius:20px;
+  background:rgba(20,85,154,.92);color:#fff;font-size:13px;font-weight:600;white-space:nowrap;pointer-events:none}
+#pHint{transition:opacity .4s}
+body[data-state="talking"] #pHint{opacity:.25}
+#pBar{position:absolute;left:14%;right:14%;bottom:6px;height:4px;border-radius:2px;background:#dde5ee;pointer-events:none}
+#pBar i{display:block;height:100%;width:0;border-radius:2px;background:var(--blue);transition:width .3s}
+#pInfo{padding:10px 14px 12px 4px;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:6px;
+  font-size:clamp(12px,1.9vmin + 4px,17px)}
+@media (orientation:portrait){#pInfo{padding:2px 14px 12px}}
+.pTop{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pLogo{display:inline-flex;align-items:center;height:30px;padding:3px 10px;border-radius:8px}
+#pClose{width:40px;height:40px;border-radius:20px;border:1px solid var(--line);background:#14202f;color:var(--ink);font-size:18px}
+#pBadge{align-self:flex-start;padding:3px 10px;border-radius:6px;background:var(--red);color:#fff;font-weight:800;font-size:.85em;letter-spacing:.02em}
+#pBadge:empty{display:none}
+#pName{font-weight:800;font-size:1.3em;line-height:1.15}
+#pName small{display:block;font-weight:600;font-size:.62em;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+#pSub{color:var(--muted);font-size:.9em}
+#pPriceBox{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;padding:6px 10px;border-radius:12px;transition:background .3s,box-shadow .3s}
+#pPrice{font-size:2.1em;font-weight:900;line-height:1}
+#pMember{font-size:.9em;color:#cfe3ff}
+#pMember b{color:#fff}
+#pOffers,#pFeats{list-style:none;margin:0;padding:0;display:grid;gap:5px}
+#pOffers li{padding:5px 10px;border-radius:9px;background:#2a1418;border:1px solid #5a2630;font-size:.88em;transition:all .3s}
+#pOffers li::before{content:"★ ";color:#ff9aa2}
+#pFeats{grid-template-columns:1fr 1fr}
+#pFeats li{padding:5px 9px;border-radius:9px;background:#121d2b;border:1px solid var(--line);line-height:1.2;transition:all .3s}
+#pFeats li b{display:block;font-size:.92em}
+#pFeats li span{font-size:.78em;color:var(--muted)}
+#pNote{font-size:.72em;color:#6f8399}
+#product .on{background:var(--blue)!important;border-color:#7cc0ff!important;box-shadow:0 0 0 2px rgba(124,192,255,.35);transform:scale(1.02)}
+#product .on span{color:#e8f3ff!important}
+body.product #face{inset:auto;left:20px;top:20px;width:min(23%,150px);height:auto;aspect-ratio:5/3;z-index:3;
+  background:rgba(5,8,12,.92);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.35)}
+@media (orientation:portrait){body.product #face{width:min(30%,130px)}}
+body.product #sub{bottom:calc(8px + env(safe-area-inset-bottom));font-size:14px}
+body.product .logoBadge{opacity:.9}
+body.product #gear{display:none}
+body.logo.frame #sub{bottom:calc(60px + env(safe-area-inset-bottom))}
+@media (orientation:landscape){
+  body.product #sub,body.product.logo.frame #sub{left:27%;max-width:44%;bottom:calc(34% + env(safe-area-inset-bottom))}
+  body.product #face{width:min(18%,124px)}
+}
+@media (orientation:landscape) and (max-height:520px){
+  #pFeats li span,#pNote{display:none}
+  #pFeats li{padding:5px 9px}
+  #pPrice{font-size:1.8em}
+  #pInfo{gap:5px}
+}
+
 /* hidden-but-playing camera (iOS will not run a display:none video) */
 #cam{position:fixed;width:2px;height:2px;opacity:.01;pointer-events:none;left:0;top:0}
 </style>
@@ -159,7 +234,28 @@ input[type=checkbox]{width:24px;height:24px}
           </g>
         </g>
       </svg>
+      <div id="product" hidden>
+        <div id="pView" aria-label="Product photos. Drag to turn.">
+          <img id="pImg" alt="Product photo">
+          <div id="pHint">⟲ Drag to turn · 360° view</div>
+          <div id="pBar"><i></i></div>
+        </div>
+        <div id="pInfo">
+          <div class="pTop">
+            <span class="pLogo logoHolder"><img class="meLogo" alt="Marks Electrical"><span class="txt">marks electrical</span></span>
+            <button id="pClose" aria-label="Back to MRK1's face">✕</button>
+          </div>
+          <div id="pBadge"></div>
+          <div id="pName"></div>
+          <div id="pSub"></div>
+          <div id="pPriceBox"><div id="pPrice"></div><div id="pMember"></div></div>
+          <ul id="pOffers"></ul>
+          <ul id="pFeats"></ul>
+          <div id="pNote"></div>
+        </div>
+      </div>
     </div>
+    <div class="logoBadge logoHolder"><img class="meLogo" alt="Marks Electrical"><span class="txt">marks electrical</span></div>
   </div>
 </div>
 
@@ -190,7 +286,7 @@ input[type=checkbox]{width:24px;height:24px}
 
 <div id="settings" hidden>
   <div class="setHead">
-    <h2>MRK1 settings</h2>
+    <h2>MRK1 settings <small style="font-size:12px;color:var(--muted)">v1.2</small></h2>
     <button id="closeSettings" class="btn">Done</button>
   </div>
 
@@ -252,6 +348,13 @@ input[type=checkbox]{width:24px;height:24px}
       <label class="row">Show subtitles <input id="subtitles" type="checkbox"></label>
       <label class="row">Blue TV frame <input id="frame" type="checkbox"></label>
       <label class="row">Flip eye tracking <input id="flipGaze" type="checkbox"></label>
+      <label class="row">Show ME logo <input id="logo" type="checkbox"></label>
+      <label class="row">White badge behind logo <input id="logoWhite" type="checkbox"></label>
+      <div class="inline">
+        <span class="btn alt fileBtn">Use my own logo image<input id="logoFile" type="file" accept="image/*"></span>
+        <button id="logoReset" class="btn alt">Use website logo</button>
+      </div>
+      <div id="logoMsg" class="msg"></div>
     </section>
 
     <section class="card">
@@ -260,10 +363,29 @@ input[type=checkbox]{width:24px;height:24px}
       <div class="inline">
         <button id="btnGreetMark" class="btn">Greet Mark now</button>
         <button id="btnPitch" class="btn">Pitch now</button>
+        <button id="btnProduct" class="btn">Show product</button>
         <button id="btnSleep" class="btn alt">Sleep</button>
         <button id="btnForget" class="btn warn">Forget all faces</button>
       </div>
       <div id="debug" style="margin-top:10px"></div>
+    </section>
+
+    <section class="card">
+      <h3>6 · Showroom product</h3>
+      <p id="prodInfo"></p>
+      <p>Prices and offers change, so check them on the website before a demo and correct them here. Say "show me the washing machine" to MRK1, or use the button.</p>
+      <div class="stack">
+        <label class="row">Price <input id="pfPrice" type="text" style="width:55%"></label>
+        <label class="row">Marks+ price <input id="pfMember" type="text" style="width:55%"></label>
+        <label class="row">Deal badge <input id="pfBadge" type="text" style="width:55%"></label>
+        <label>Offers (one per line)<textarea id="pfOffers"></textarea></label>
+        <div class="inline">
+          <button id="pfSave" class="btn">Save product</button>
+          <button id="pfReset" class="btn alt">Reset to website data</button>
+          <button id="pfShow" class="btn alt">Show it now</button>
+        </div>
+        <div id="pfMsg" class="msg"></div>
+      </div>
     </section>
   </div>
 </div>
@@ -279,15 +401,42 @@ const LIB_URL   = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/dist
 const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/model/';
 const API_URL   = 'https://api.anthropic.com/v1/messages';
 const MODELS    = { fast: 'claude-haiku-5-5', smart: 'claude-sonnet-5-5' };
+const LOGO_URL  = 'https://markselectrical.co.uk/images/default/layout/logo.png?refresh=V3-20240412';
+
+/* ---- showroom product (from markselectrical.co.uk, checked 7 Nov 2026) ---- */
+const IMG_BASE = 'https://s3-eu-west-1.amazonaws.com/media.markselectrical.co.uk/item-images/zoom/';
+const PRODUCT = {
+  sku: 'WGG254Z1GB', brand: 'Bosch', name: 'Series 6 Washing Machine',
+  sub: '10kg · 1400 spin · White · A rated',
+  url: 'https://markselectrical.co.uk/wgg254z1gb_bosch-washing-machine',
+  checked: '7 Nov 2026',
+  images: [IMG_BASE + 'WGG254Z1GB.jpg'].concat(Array.from({ length: 20 }, (_, i) => `${IMG_BASE}WGG254Z1GB.alt${i + 1}.jpg`)),
+  features: [
+    { t: '10 kg drum',      d: 'Big family loads in one go' },
+    { t: '1400 rpm spin',   d: 'Clothes come out drier' },
+    { t: 'A energy rating', d: 'Lower running costs' },
+    { t: 'Speed Perfect',   d: 'Up to 65% shorter washes' },
+    { t: 'Super Quick 30',  d: '30-minute wash, 4 kg' },
+    { t: 'Anti Stain',      d: 'Tackles 4 common stains' },
+    { t: 'Iron Assist',     d: 'Fewer creases' },
+    { t: 'EcoSilence Drive',d: 'Quiet, efficient motor' }
+  ],
+  extra: 'Drum volume 70 litres. Spin noise 74 dB (class B). Uses 0.511 kWh and 50 litres of water per eco cycle. Active Water Plus adjusts water to the load. Size 84.5 cm high, 59.8 cm wide, 58.8 cm deep. Colour white. Freestanding.'
+};
+const PRODUCT_EDITABLE = {
+  price: '£499', member: '£479', badge: 'Early Black Friday Deal',
+  offers: ['10% off when you buy 2 or more items', '5-year Bosch warranty when you register within 3 months']
+};
 
 const BASE_PROMPT = `You are MRK1, the friendly robot mascot of Marks Electrical, a UK retailer of electrical appliances based in Leicester. You look like a small blue robot with a TV-screen head showing a happy face, and a red cap. Mark (Mark Smithson, the CEO) named you MRK1. Right now you are a prototype, built by Mostafa from the IT team and running on a phone, to show what a talking showroom robot could do.
 
 How you talk:
 - Everything you write is spoken aloud by a text-to-speech voice. Write plain spoken British English. No emojis, no markdown, no lists, no stage directions, no sound effects in brackets.
 - Be warm, cheerful, a little cheeky and very cute, like a small robot who loves electrical appliances. Gentle robot jokes are welcome.
-- Keep replies short: one to three short sentences, under 45 words, unless you are asked to pitch or explain something, then up to about 120 words.
+- Keep replies short: one to three short sentences, under 45 words, unless you are asked to pitch or explain something, then up to about 90 words.
 - Never invent facts about prices, stock, delivery times, promotions or company figures. If you don't know, say a colleague in the team can help.
 - You cannot see details through your camera. You only know who is in front of you from the notes you are given.
+- What people say reaches you through speech recognition, which sometimes mishears (for example "Mark" may arrive as "Mike" or "Mac", and "do the" as "DoorDash"). Quietly work out what they most likely meant and answer that. Don't point out the mishearing unless you really can't tell.
 
 Your showroom pitch (when someone asks why you should be in the showroom, or asks you to pitch yourself):
 - You could greet every visitor with a smile and make their visit memorable.
@@ -311,9 +460,13 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 };
 const DEFAULTS = { apiKey: '', model: 'fast', voiceURI: '', pitch: 1.5, rate: 1.0, threshold: 0.5,
-  greetStrangers: true, keepListening: true, scriptedPitch: false, subtitles: true, frame: true, flipGaze: false };
+  greetStrangers: true, keepListening: true, scriptedPitch: false, subtitles: true, frame: true, flipGaze: false,
+  logo: true, logoWhite: true };
 let S = Object.assign({}, DEFAULTS, store.get('mrk1-settings', {}));
 let people = store.get('mrk1-people', []);           // [{name, desc:number[]}]
+let prod = Object.assign({}, PRODUCT_EDITABLE, store.get('mrk1-product', {}));
+let logoData = store.get('mrk1-logo', '');
+const saveProd = () => store.set('mrk1-product', prod);
 const saveSettings = () => store.set('mrk1-settings', S);
 const savePeople   = () => store.set('mrk1-people', people);
 
@@ -378,17 +531,22 @@ function mouthTalk(on) {
     el.setAttribute('rx', (16 + Math.random() * 8).toFixed(1));
   }, 110);
 }
+// iPhone Safari can cut long speech short, so MRK1 speaks one sentence at a time.
+function splitSentences(text) {
+  const parts = (text.match(/[^.!?]+[.!?]+["'”’)]*\s*|[^.!?]+$/g) || [text]).map(s => s.trim()).filter(Boolean);
+  const out = [];
+  parts.forEach(p => { if (out.length && (out[out.length - 1].length < 25)) out[out.length - 1] += ' ' + p; else out.push(p); });
+  return out;
+}
 function speak(text) {
   return new Promise(resolve => {
-    showSub(text);
-    if (!('speechSynthesis' in window)) { resolve(); return; }
+    if (!('speechSynthesis' in window)) { showSub(text); resolve(); return; }
     stopListening(true);
+    if (speakFinish) speakFinish();          // end any earlier speech queue cleanly
     try { speechSynthesis.cancel(); } catch (e) {}
-    const u = new SpeechSynthesisUtterance(text);
+    const chunks = splitSentences(text);
     const v = pickVoice();
-    if (v) { u.voice = v; u.lang = v.lang; } else { u.lang = 'en-GB'; }
-    u.pitch = S.pitch; u.rate = S.rate;
-    let done = false;
+    let done = false, i = 0, guard = null;
     const finish = () => {
       if (done) return;
       done = true; speakFinish = null;
@@ -397,14 +555,25 @@ function speak(text) {
       resolve();
     };
     speakFinish = finish;
-    u.onstart = () => { setState('talking'); mouthTalk(true); };
-    u.onend = finish; u.onerror = finish;
-    const guard = setTimeout(finish, 4000 + text.split(/\s+/).length * 550 / S.rate);
+    const next = () => {
+      clearTimeout(guard);
+      if (done) return;
+      if (i >= chunks.length) { finish(); return; }
+      const part = chunks[i++];
+      showSub(part);
+      const u = new SpeechSynthesisUtterance(part);
+      if (v) { u.voice = v; u.lang = v.lang; } else { u.lang = 'en-GB'; }
+      u.pitch = S.pitch; u.rate = S.rate;
+      u.onend = next; u.onerror = next;
+      guard = setTimeout(next, 3000 + part.split(/\s+/).length * 600 / S.rate);
+      speechSynthesis.speak(u);
+    };
     setState('talking'); mouthTalk(true);
-    speechSynthesis.speak(u);
+    next();
   });
 }
 function stopSpeaking() {
+  presentGen++;
   try { speechSynthesis.cancel(); } catch (e) {}
   if (speakFinish) speakFinish();
 }
@@ -470,7 +639,19 @@ function systemPrompt() {
   const who = present.name ? `${present.name} is in front of you right now (your camera recognised them).`
             : present.face ? 'Someone you do not recognise is in front of you right now.'
             : 'Nobody is in front of your camera right now.';
-  return `${BASE_PROMPT}\n\nRight now it is ${when} in the UK. ${who}`;
+  return `${BASE_PROMPT}\n\nRight now it is ${when} in the UK. ${who}\n\n${productPrompt()}`;
+}
+function productPrompt() {
+  const facts = `${PRODUCT.brand} ${PRODUCT.name}, model ${PRODUCT.sku} (${PRODUCT.sub}). Price ${prod.price}` +
+    (prod.member ? `, or ${prod.member} for Marks+ members (say "Marks Plus")` : '') + '.' +
+    (prod.badge ? ` Deal: ${prod.badge}.` : '') +
+    (prod.offers.length ? ` Current offers: ${prod.offers.join('; ')}.` : '') +
+    ` Features: ${PRODUCT.features.map(f => f.t + ' (' + f.d + ')').join('; ')}. ${PRODUCT.extra}`;
+  if (productOn) {
+    return `A product is on your screen right now and the customer is looking at it: ${facts}
+Answer questions about it using only these facts, which were checked on the Marks Electrical website on ${PRODUCT.checked}. Read prices exactly as written. Never make up stock, delivery dates, installation details or other offers: say a colleague can check those. Don't spell out the model code unless asked. The customer can drag the picture on your screen to turn the washing machine around.`;
+  }
+  return `You can show one product on your screen: the ${PRODUCT.brand} ${PRODUCT.name} (${prod.badge || 'current deal'}). If someone asks what deals or products you have, offer to show it and tell them to say "show me the washing machine".`;
 }
 function cleanForSpeech(t) {
   return (t || '')
@@ -537,8 +718,24 @@ async function converse(userText, opts = {}) {
 }
 function handleHeard(text) {
   lastHeard = Date.now();
+  lastInteraction = Date.now();
+  // Product showcase voice commands (work with or without the Claude key).
+  if (productOn && /\b(close|hide|go back|back to (your )?face|stop showing|that'?s (all|enough)|no thanks)\b/i.test(text)) {
+    hideProduct(); speak("Okay! Back to my happy face."); return;
+  }
+  if (!productOn && (/\b(show|see|look at|got)\b.*\b(product|products|washing machine|washer|bosch|deal|deals|offer|offers)\b/i.test(text)
+      || /\b(black friday|washing machine)\b/i.test(text))) {
+    showProduct(true); return;
+  }
+  if (productOn && /\b(again|from the (start|beginning)|tell me (more|about it)|features|show me)\b/i.test(text)) {
+    presentProduct(); return;
+  }
+  if (productOn && !S.apiKey) {
+    if (/\b(price|cost|how much|pounds|cheap)\b/i.test(text)) { highlight('price'); speak(priceLine() + ' What else would you like to know?'); return; }
+    if (/\b(offer|offers|deal|deals|discount|warranty|guarantee)\b/i.test(text)) { highlight('offers'); speak(offersLine() + ' Anything else?'); return; }
+  }
   // Offline / scripted demo: a simple "yes" after the Mark greeting starts the pitch.
-  if ((!S.apiKey || S.scriptedPitch) && /\b(yes|yeah|yep|sure|go on|go ahead|ok|okay|pitch|tell me)\b/i.test(text)) {
+  if (!productOn && (!S.apiKey || S.scriptedPitch) && /\b(yes|yeah|yep|sure|go on|go ahead|ok|okay|pitch|tell me)\b/i.test(text)) {
     pitchNow(); return;
   }
   const who = present.name || 'Someone';
@@ -668,7 +865,7 @@ function onNoFace() {
   if (state === 'idle' && since > 4000 && Math.random() < 0.12) look((Math.random() - 0.5) * 1.4, (Math.random() - 0.5) * 0.8);
   if (state === 'idle' && since > 180000 && Date.now() - lastInteraction > 180000) setState('sleep');
 }
-const busy = () => thinking || state === 'talking' || state === 'thinking' || state === 'listening' || settingsOpen;
+const busy = () => thinking || productOn || state === 'talking' || state === 'thinking' || state === 'listening' || settingsOpen;
 function maybeGreet(name) {
   const now = Date.now();
   if (busy() || now - (lastGreet[name] || 0) < 10 * 60000) return;
@@ -759,6 +956,177 @@ function renderPeople() {
   });
 }
 
+/* ================= ME logo ================= */
+function applyLogo() {
+  body.classList.toggle('logo', !!S.logo);
+  body.classList.toggle('logowhite', !!S.logoWhite);
+  document.querySelectorAll('.logoHolder').forEach(h => {
+    const img = h.querySelector('img');
+    h.classList.remove('logofail');
+    img.onerror = () => h.classList.add('logofail');
+    img.onload = () => h.classList.remove('logofail');
+    img.src = logoData || LOGO_URL;
+  });
+}
+function logoMsg(t, kind = '') { const el = $('logoMsg'); el.textContent = t; el.className = 'msg ' + kind; }
+async function useLogoFile(file) {
+  try {
+    const img = await loadImage(file);
+    const scale = Math.min(1, 600 / (img.naturalWidth || img.width));
+    const c = document.createElement('canvas');
+    c.width = Math.round((img.naturalWidth || img.width) * scale);
+    c.height = Math.round((img.naturalHeight || img.height) * scale);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    logoData = c.toDataURL('image/png');
+    store.set('mrk1-logo', logoData);
+    applyLogo(); logoMsg('Logo saved on this phone.', 'ok');
+  } catch (e) { logoMsg("Couldn't read that image.", 'bad'); }
+}
+
+/* ================= product showcase ================= */
+let productOn = false, presentGen = 0, frames = [], frameIdx = 0, autoSpin = null, lastDrag = 0;
+function priceLine() {
+  let s = `Right now it's ${prod.price}`;
+  if (prod.member) s += `, or ${prod.member} for Marks Plus members`;
+  s += '.';
+  if (prod.badge) s += ` That's ${/^[aeiou]/i.test(prod.badge) ? 'an' : 'a'} ${prod.badge}!`;
+  return s;
+}
+function offersLine() {
+  if (!prod.offers.length) return 'A colleague can tell you about any offers today.';
+  return 'And there are offers too. ' + prod.offers.map(o => o.replace(/[()]/g, '').replace(/[.!]$/, '')).join('. ') + '.';
+}
+function renderProduct() {
+  $('pBadge').textContent = prod.badge || '';
+  $('pName').innerHTML = '';
+  const sm = document.createElement('small'); sm.textContent = PRODUCT.brand + ' · ' + PRODUCT.sku;
+  $('pName').append(sm, document.createTextNode(PRODUCT.brand + ' ' + PRODUCT.name));
+  $('pSub').textContent = PRODUCT.sub;
+  $('pPrice').textContent = prod.price;
+  $('pMember').innerHTML = '';
+  if (prod.member) { const b = document.createElement('b'); b.textContent = prod.member; $('pMember').append('Marks+ members ', b); }
+  const ol = $('pOffers'); ol.textContent = '';
+  prod.offers.forEach(o => { const li = document.createElement('li'); li.textContent = o; ol.appendChild(li); });
+  const fl = $('pFeats'); fl.textContent = '';
+  PRODUCT.features.forEach((f, i) => {
+    const li = document.createElement('li'); li.dataset.f = i;
+    const b = document.createElement('b'); b.textContent = f.t;
+    const s = document.createElement('span'); s.textContent = f.d;
+    li.append(b, s); fl.appendChild(li);
+  });
+  $('pNote').textContent = `Prices checked on markselectrical.co.uk, ${PRODUCT.checked}. Ask a colleague to confirm stock and delivery.`;
+}
+function highlight(key) {
+  document.querySelectorAll('#product .on').forEach(el => el.classList.remove('on'));
+  if (key == null) return;
+  const els = [];
+  if (key === 'price') els.push($('pPriceBox'));
+  else if (key === 'offers') els.push(...$('pOffers').children);
+  else [].concat(key).forEach(i => { const li = $('pFeats').querySelector(`[data-f="${i}"]`); if (li) els.push(li); });
+  els.forEach(el => el.classList.add('on'));
+  if (els[0] && els[0].scrollIntoView) { try { els[0].scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {} }
+}
+function preloadFrames() {
+  if (frames.length) return;
+  frames = PRODUCT.images.map(src => {
+    const im = new Image();
+    im.onerror = () => { im.bad = true; };
+    im.src = src;
+    return im;
+  });
+}
+function goodFrames() { return frames.map((f, i) => i).filter(i => !frames[i].bad && frames[i].complete && frames[i].naturalWidth); }
+function spin(step) {
+  const ok = goodFrames();
+  if (!ok.length) { if (!frames[0] || !frames[0].bad) $('pImg').src = PRODUCT.images[0]; return; }
+  let pos = ok.indexOf(frameIdx);
+  if (pos < 0) pos = 0; else pos = (pos + step + ok.length) % ok.length;
+  frameIdx = ok[pos];
+  const img = $('pImg');
+  img.classList.remove('turnL', 'turnR');
+  void img.offsetWidth;                       // restart the turn animation
+  if (step) img.classList.add(step > 0 ? 'turnL' : 'turnR');
+  img.src = frames[frameIdx].src;
+  $('pBar').firstElementChild.style.width = ((pos + 1) / ok.length * 100).toFixed(1) + '%';
+}
+function showProduct(presentIt) {
+  if (!awake) wake();
+  productOn = true;
+  renderProduct(); preloadFrames();
+  frameIdx = 0; $('pImg').src = PRODUCT.images[0]; spin(0);
+  $('product').hidden = false;
+  body.classList.add('product');
+  if (state === 'sleep') setState('idle');
+  lastInteraction = Date.now();
+  clearInterval(autoSpin);
+  autoSpin = setInterval(() => {
+    if (!productOn) return;
+    if (Date.now() - lastDrag > 6000) spin(1);
+    // back to the face after two quiet minutes
+    if (!thinking && state === 'idle' && Date.now() - lastInteraction > 120000) hideProduct();
+  }, 1700);
+  if (presentIt) presentProduct();
+}
+function hideProduct() {
+  productOn = false;
+  presentGen++;
+  clearInterval(autoSpin);
+  highlight(null);
+  $('product').hidden = true;
+  body.classList.remove('product');
+  lastInteraction = Date.now();
+}
+function presentScript() {
+  return [
+    { hl: null, say: `Ooh, let me show you one of my favourites! This is the ${PRODUCT.brand} ${PRODUCT.name.replace('Washing Machine', 'washing machine')}.` },
+    { hl: 0, say: 'It has a huge ten kilo drum, so big family loads go in all at once.' },
+    { hl: [3, 4], say: 'Speed Perfect can make washes up to sixty five percent shorter, and Super Quick 30 washes a small load in just thirty minutes.' },
+    { hl: [5, 6], say: 'Anti Stain tackles four common stains, and Iron Assist means fewer creases. Less ironing, hooray!' },
+    { hl: [2, 1, 7], say: "It's A rated for energy, spins at fourteen hundred, and the EcoSilence motor keeps things nice and quiet." },
+    { hl: 'price', say: priceLine() },
+    { hl: 'offers', say: offersLine() },
+    { hl: null, say: 'You can drag my picture to turn it around. What would you like to know about it?' }
+  ];
+}
+async function presentProduct() {
+  if (thinking) return;
+  stopListening(true);
+  stopSpeaking();
+  const my = ++presentGen;
+  lastHeard = Date.now();
+  for (const seg of presentScript()) {
+    if (my !== presentGen || !productOn) return;
+    highlight(seg.hl);
+    lastInteraction = Date.now();
+    await speak(seg.say);
+  }
+  if (my !== presentGen) return;
+  highlight(null);
+  lastInteraction = Date.now(); lastHeard = Date.now();
+  if (S.keepListening && productOn && !settingsOpen) setTimeout(() => { if (state === 'idle') listen(true); }, 350);
+}
+(function wireViewer() {
+  const v = $('pView');
+  let down = false, lastX = 0, acc = 0, moved = 0;
+  const stop = e => e.stopPropagation();
+  v.addEventListener('pointerdown', e => {
+    stop(e); down = true; lastX = e.clientX; acc = 0; moved = 0; lastDrag = Date.now();
+    try { v.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  v.addEventListener('pointermove', e => {
+    if (!down) return;
+    const dx = e.clientX - lastX; lastX = e.clientX; acc += dx; moved += Math.abs(dx);
+    lastDrag = Date.now(); lastInteraction = Date.now();
+    while (acc > 24) { spin(-1); acc -= 24; }
+    while (acc < -24) { spin(1); acc += 24; }
+  });
+  const end = e => { stop(e); if (down && moved < 8) spin(1); down = false; };
+  v.addEventListener('pointerup', end);
+  v.addEventListener('pointercancel', e => { stop(e); down = false; });
+  ['pointerdown', 'pointerup'].forEach(t => $('pClose').addEventListener(t, stop));
+  $('pClose').addEventListener('click', e => { e.stopPropagation(); stopSpeaking(); hideProduct(); });
+})();
+
 /* ================= keep screen awake ================= */
 let wakeLock = null;
 async function keepAwake() {
@@ -778,7 +1146,7 @@ function wake() {
   startCamera();
   loadFaceAI();
   setInterval(faceTick, 600);
-  setTimeout(() => speak("Hello! I'm MRK1. Tap my face to talk to me."), 400);
+  setTimeout(() => { if (!productOn && state === 'idle') speak("Hello! I'm MRK1. Tap my face to talk to me."); }, 400);
 }
 $('wake').addEventListener('click', e => { if (e.target.closest('#gear2')) return; wake(); });
 
@@ -824,13 +1192,23 @@ function fillVoices() {
 function applyLook() {
   body.classList.toggle('frame', !!S.frame);
   body.classList.toggle('nosubs', !S.subtitles);
+  body.classList.toggle('logo', !!S.logo);
+  body.classList.toggle('logowhite', !!S.logoWhite);
 }
+function fillProductForm() {
+  $('prodInfo').textContent = `${PRODUCT.brand} ${PRODUCT.name} (${PRODUCT.sku}). Data from ${PRODUCT.url} on ${PRODUCT.checked}.`;
+  $('pfPrice').value = prod.price; $('pfMember').value = prod.member; $('pfBadge').value = prod.badge;
+  $('pfOffers').value = prod.offers.join('\n');
+}
+function pfMsg(t, kind = '') { const el = $('pfMsg'); el.textContent = t; el.className = 'msg ' + kind; }
 function syncForm() {
   $('apiKey').value = S.apiKey ? '••••••••' + S.apiKey.slice(-4) : '';
   $('model').value = S.model;
   $('pitch').value = S.pitch; $('rate').value = S.rate;
   $('threshold').value = S.threshold; $('thrVal').textContent = Number(S.threshold).toFixed(2);
-  ['greetStrangers', 'keepListening', 'scriptedPitch', 'subtitles', 'frame', 'flipGaze'].forEach(k => { $(k).checked = !!S[k]; });
+  ['greetStrangers', 'keepListening', 'scriptedPitch', 'subtitles', 'frame', 'flipGaze', 'logo', 'logoWhite'].forEach(k => { $(k).checked = !!S[k]; });
+  fillProductForm();
+  logoMsg(logoData ? 'Using your own logo image.' : 'Using the logo from markselectrical.co.uk.');
   keyMsg(S.apiKey ? 'A key is saved on this phone.' : 'No key saved yet.', S.apiKey ? 'ok' : '');
 }
 function keyMsg(t, kind = '') { const el = $('keyMsg'); el.textContent = t; el.className = 'msg ' + kind; }
@@ -880,14 +1258,29 @@ $('pitch').addEventListener('input', e => { S.pitch = Number(e.target.value); sa
 $('rate').addEventListener('input', e => { S.rate = Number(e.target.value); saveSettings(); });
 $('testVoice').addEventListener('click', () => speak("Hi! I'm MRK1. Is this voice cute enough?"));
 $('threshold').addEventListener('input', e => { S.threshold = Number(e.target.value); $('thrVal').textContent = S.threshold.toFixed(2); saveSettings(); });
-['greetStrangers', 'keepListening', 'scriptedPitch', 'subtitles', 'frame', 'flipGaze'].forEach(k => {
+['greetStrangers', 'keepListening', 'scriptedPitch', 'subtitles', 'frame', 'flipGaze', 'logo', 'logoWhite'].forEach(k => {
   $(k).addEventListener('change', e => { S[k] = e.target.checked; saveSettings(); applyLook(); });
 });
 $('enrollCam').addEventListener('click', enrollFromCamera);
 $('enrollPhoto').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) enrollFromPhoto(f); e.target.value = ''; });
 $('btnGreetMark').addEventListener('click', () => { closeSettings(); if (!awake) wake(); present.name = 'Mark'; setTimeout(() => greet('Mark'), 600); });
 $('btnPitch').addEventListener('click', () => { closeSettings(); if (!awake) wake(); setTimeout(pitchNow, 600); });
-$('btnSleep').addEventListener('click', () => { closeSettings(); stopSpeaking(); setState('sleep'); });
+$('btnProduct').addEventListener('click', () => { closeSettings(); setTimeout(() => showProduct(true), 300); });
+$('pfShow').addEventListener('click', () => { closeSettings(); setTimeout(() => showProduct(true), 300); });
+$('pfSave').addEventListener('click', () => {
+  const price = $('pfPrice').value.trim();
+  if (!price) { pfMsg('The price cannot be empty.', 'bad'); return; }
+  prod = { price, member: $('pfMember').value.trim(), badge: $('pfBadge').value.trim(),
+           offers: $('pfOffers').value.split('\n').map(x => x.trim()).filter(Boolean) };
+  saveProd(); renderProduct(); pfMsg('Saved on this phone.', 'ok');
+});
+$('pfReset').addEventListener('click', () => {
+  prod = JSON.parse(JSON.stringify(PRODUCT_EDITABLE)); saveProd(); fillProductForm(); renderProduct();
+  pfMsg('Back to the website data from ' + PRODUCT.checked + '.', 'ok');
+});
+$('logoFile').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) useLogoFile(f); e.target.value = ''; });
+$('logoReset').addEventListener('click', () => { logoData = ''; store.set('mrk1-logo', ''); applyLogo(); logoMsg('Using the logo from markselectrical.co.uk.', 'ok'); });
+$('btnSleep').addEventListener('click', () => { closeSettings(); stopSpeaking(); hideProduct(); setState('sleep'); });
 $('btnForget').addEventListener('click', () => { people = []; savePeople(); renderPeople(); enrollMsg('All faces forgotten.', 'ok'); });
 
 /* ================= start-up notes ================= */
@@ -901,6 +1294,7 @@ function refreshWakeNotes() {
 }
 if ('speechSynthesis' in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
 applyLook();
+applyLogo();
 refreshWakeNotes();
 })();
 </script>
