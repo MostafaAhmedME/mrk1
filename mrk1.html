@@ -64,7 +64,7 @@ body[data-state="sleep"] #face{opacity:.35}
 #sub.show{opacity:1}
 #sub.you{color:#cfe3ff}
 #sub.err{color:var(--bad)}
-body.nosubs #sub{display:none}
+body.nosubs #sub:not(.err){display:none}
 #gear{position:fixed;top:calc(10px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right));
   width:44px;height:44px;border:0;border-radius:22px;background:transparent;color:var(--ink);opacity:.22;
   display:flex;align-items:center;justify-content:center;z-index:5}
@@ -237,7 +237,7 @@ body.logo.frame #sub{bottom:calc(60px + env(safe-area-inset-bottom))}
       <div id="product" hidden>
         <div id="pView" aria-label="Product photos. Drag to turn.">
           <img id="pImg" alt="Product photo">
-          <div id="pHint">⟲ Drag to turn · 360° view</div>
+          <div id="pHint"></div>
           <div id="pBar"><i></i></div>
         </div>
         <div id="pInfo">
@@ -286,7 +286,7 @@ body.logo.frame #sub{bottom:calc(60px + env(safe-area-inset-bottom))}
 
 <div id="settings" hidden>
   <div class="setHead">
-    <h2>MRK1 settings <small style="font-size:12px;color:var(--muted)">v1.2</small></h2>
+    <h2>MRK1 settings <small style="font-size:12px;color:var(--muted)">v1.3</small></h2>
     <button id="closeSettings" class="btn">Done</button>
   </div>
 
@@ -345,7 +345,7 @@ body.logo.frame #sub{bottom:calc(60px + env(safe-area-inset-bottom))}
       <label class="row">Say hello to new faces <input id="greetStrangers" type="checkbox"></label>
       <label class="row">Keep listening after I talk <input id="keepListening" type="checkbox"></label>
       <label class="row">Scripted pitch (works offline) <input id="scriptedPitch" type="checkbox"></label>
-      <label class="row">Show subtitles <input id="subtitles" type="checkbox"></label>
+      <label class="row">Show what MRK1 says and hears on screen <input id="subtitles" type="checkbox"></label>
       <label class="row">Blue TV frame <input id="frame" type="checkbox"></label>
       <label class="row">Flip eye tracking <input id="flipGaze" type="checkbox"></label>
       <label class="row">Show ME logo <input id="logo" type="checkbox"></label>
@@ -385,6 +385,17 @@ body.logo.frame #sub{bottom:calc(60px + env(safe-area-inset-bottom))}
           <button id="pfShow" class="btn alt">Show it now</button>
         </div>
         <div id="pfMsg" class="msg"></div>
+      </div>
+      <h3 style="margin-top:16px">360° spin</h3>
+      <p id="spinInfo"></p>
+      <p>Film a slow video walking once all the way round the product: 10 to 20 seconds, same height and distance, product in the middle. Or pick 24 to 36 photos taken round it, in order. MRK1 turns it into a drag-to-spin 360° and keeps it on this phone.</p>
+      <div class="stack">
+        <div class="inline">
+          <span class="btn fileBtn">Make 360° from video or photos<input id="spinFile" type="file" accept="video/*,image/*" multiple></span>
+          <button id="spinClear" class="btn warn">Remove 360°</button>
+        </div>
+        <label class="row">Video goes all the way round <input id="spinLoop" type="checkbox"></label>
+        <div id="spinMsg" class="msg"></div>
       </div>
     </section>
   </div>
@@ -460,9 +471,10 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 };
 const DEFAULTS = { apiKey: '', model: 'fast', voiceURI: '', pitch: 1.5, rate: 1.0, threshold: 0.5,
-  greetStrangers: true, keepListening: true, scriptedPitch: false, subtitles: true, frame: true, flipGaze: false,
-  logo: true, logoWhite: true };
+  greetStrangers: true, keepListening: true, scriptedPitch: false, subtitles: false, frame: true, flipGaze: false,
+  logo: true, logoWhite: true, spinLoop: true };
 let S = Object.assign({}, DEFAULTS, store.get('mrk1-settings', {}));
+if (!S.v13) { S.subtitles = false; S.v13 = true; store.set('mrk1-settings', S); }   // v1.3: no transcript on screen by default
 let people = store.get('mrk1-people', []);           // [{name, desc:number[]}]
 let prod = Object.assign({}, PRODUCT_EDITABLE, store.get('mrk1-product', {}));
 let logoData = store.get('mrk1-logo', '');
@@ -649,7 +661,7 @@ function productPrompt() {
     ` Features: ${PRODUCT.features.map(f => f.t + ' (' + f.d + ')').join('; ')}. ${PRODUCT.extra}`;
   if (productOn) {
     return `A product is on your screen right now and the customer is looking at it: ${facts}
-Answer questions about it using only these facts, which were checked on the Marks Electrical website on ${PRODUCT.checked}. Read prices exactly as written. Never make up stock, delivery dates, installation details or other offers: say a colleague can check those. Don't spell out the model code unless asked. The customer can drag the picture on your screen to turn the washing machine around.`;
+Answer questions about it using only these facts, which were checked on the Marks Electrical website on ${PRODUCT.checked}. Read prices exactly as written. Never make up stock, delivery dates, installation details or other offers: say a colleague can check those. Don't spell out the model code unless asked. ${isSpin() ? 'The customer can drag the picture on your screen to spin the washing machine round in 360 degrees.' : 'The customer can swipe the picture on your screen to see more photos.'}`;
   }
   return `You can show one product on your screen: the ${PRODUCT.brand} ${PRODUCT.name} (${prod.badge || 'current deal'}). If someone asks what deals or products you have, offer to show it and tell them to say "show me the washing machine".`;
 }
@@ -984,7 +996,7 @@ async function useLogoFile(file) {
 }
 
 /* ================= product showcase ================= */
-let productOn = false, presentGen = 0, frames = [], frameIdx = 0, autoSpin = null, lastDrag = 0;
+let productOn = false, presentGen = 0, photoFrames = [], spinFrames = [], frameIdx = 0, autoSpin = null, lastDrag = 0, autoDir = 1;
 function priceLine() {
   let s = `Right now it's ${prod.price}`;
   if (prod.member) s += `, or ${prod.member} for Marks Plus members`;
@@ -1026,45 +1038,53 @@ function highlight(key) {
   els.forEach(el => el.classList.add('on'));
   if (els[0] && els[0].scrollIntoView) { try { els[0].scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {} }
 }
-function preloadFrames() {
-  if (frames.length) return;
-  frames = PRODUCT.images.map(src => {
-    const im = new Image();
-    im.onerror = () => { im.bad = true; };
-    im.src = src;
-    return im;
-  });
-}
-function goodFrames() { return frames.map((f, i) => i).filter(i => !frames[i].bad && frames[i].complete && frames[i].naturalWidth); }
+function mkImg(src) { const im = new Image(); im.onerror = () => { im.bad = true; }; im.src = src; return im; }
+function preloadFrames() { if (!photoFrames.length) photoFrames = PRODUCT.images.map(mkImg); }
+const isSpin = () => spinFrames.length >= 8;
+const curFrames = () => isSpin() ? spinFrames : photoFrames;
+function goodFrames() { const fr = curFrames(); return fr.map((f, i) => i).filter(i => !fr[i].bad && fr[i].complete && fr[i].naturalWidth); }
 function spin(step) {
-  const ok = goodFrames();
-  if (!ok.length) { if (!frames[0] || !frames[0].bad) $('pImg').src = PRODUCT.images[0]; return; }
+  const fr = curFrames(), ok = goodFrames(), img = $('pImg');
+  if (!ok.length) { if (fr[0]) img.src = fr[0].src; return; }
   let pos = ok.indexOf(frameIdx);
-  if (pos < 0) pos = 0; else pos = (pos + step + ok.length) % ok.length;
+  if (pos < 0) pos = 0;
+  else if (isSpin() && !S.spinLoop) pos = Math.max(0, Math.min(ok.length - 1, pos + step));
+  else pos = (pos + step + ok.length) % ok.length;
   frameIdx = ok[pos];
-  const img = $('pImg');
   img.classList.remove('turnL', 'turnR');
-  void img.offsetWidth;                       // restart the turn animation
-  if (step) img.classList.add(step > 0 ? 'turnL' : 'turnR');
-  img.src = frames[frameIdx].src;
+  if (!isSpin() && step) { void img.offsetWidth; img.classList.add(step > 0 ? 'turnL' : 'turnR'); }
+  img.src = fr[frameIdx].src;
   $('pBar').firstElementChild.style.width = ((pos + 1) / ok.length * 100).toFixed(1) + '%';
+}
+function autoStep() {
+  if (isSpin() && !S.spinLoop) {           // half-circle video: swing back and forth
+    const ok = goodFrames(), pos = ok.indexOf(frameIdx);
+    if (pos + autoDir >= ok.length || pos + autoDir < 0) autoDir = -autoDir;
+  }
+  spin(isSpin() ? autoDir : 1);
+}
+function setViewerLabels() {
+  $('pHint').textContent = isSpin() ? '⟲ Drag to spin · 360°' : '‹  Swipe for more photos  ›';
+  $('pView').setAttribute('aria-label', isSpin() ? '360 degree view. Drag to spin.' : 'Product photos. Swipe for more.');
 }
 function showProduct(presentIt) {
   if (!awake) wake();
   productOn = true;
-  renderProduct(); preloadFrames();
-  frameIdx = 0; $('pImg').src = PRODUCT.images[0]; spin(0);
+  renderProduct(); preloadFrames(); setViewerLabels();
+  frameIdx = 0; autoDir = 1; $('pImg').src = curFrames()[0].src; spin(0);
   $('product').hidden = false;
   body.classList.add('product');
   if (state === 'sleep') setState('idle');
   lastInteraction = Date.now();
   clearInterval(autoSpin);
+  let lastAuto = 0;
   autoSpin = setInterval(() => {
     if (!productOn) return;
-    if (Date.now() - lastDrag > 6000) spin(1);
+    const now = Date.now();
+    if (now - lastDrag > 5000 && now - lastAuto >= (isSpin() ? 120 : 2800)) { autoStep(); lastAuto = now; }
     // back to the face after two quiet minutes
-    if (!thinking && state === 'idle' && Date.now() - lastInteraction > 120000) hideProduct();
-  }, 1700);
+    if (!thinking && state === 'idle' && now - lastInteraction > 120000) hideProduct();
+  }, 60);
   if (presentIt) presentProduct();
 }
 function hideProduct() {
@@ -1085,7 +1105,7 @@ function presentScript() {
     { hl: [2, 1, 7], say: "It's A rated for energy, spins at fourteen hundred, and the EcoSilence motor keeps things nice and quiet." },
     { hl: 'price', say: priceLine() },
     { hl: 'offers', say: offersLine() },
-    { hl: null, say: 'You can drag my picture to turn it around. What would you like to know about it?' }
+    { hl: null, say: (isSpin() ? 'You can drag my picture to spin it all the way round.' : 'You can swipe my picture to see more photos.') + ' What would you like to know about it?' }
   ];
 }
 async function presentProduct() {
@@ -1117,15 +1137,103 @@ async function presentProduct() {
     if (!down) return;
     const dx = e.clientX - lastX; lastX = e.clientX; acc += dx; moved += Math.abs(dx);
     lastDrag = Date.now(); lastInteraction = Date.now();
-    while (acc > 24) { spin(-1); acc -= 24; }
-    while (acc < -24) { spin(1); acc += 24; }
+    // 360: one full drag across the picture is about one full turn. Photos: one swipe = one photo.
+    const stepPx = isSpin() ? Math.max(5, v.clientWidth / Math.max(goodFrames().length, 1)) : 70;
+    while (acc > stepPx) { spin(-1); acc -= stepPx; }
+    while (acc < -stepPx) { spin(1); acc += stepPx; }
   });
-  const end = e => { stop(e); if (down && moved < 8) spin(1); down = false; };
+  const end = e => { stop(e); if (down && moved < 8 && !isSpin()) spin(1); down = false; };
   v.addEventListener('pointerup', end);
   v.addEventListener('pointercancel', e => { stop(e); down = false; });
   ['pointerdown', 'pointerup'].forEach(t => $('pClose').addEventListener(t, stop));
   $('pClose').addEventListener('click', e => { e.stopPropagation(); stopSpeaking(); hideProduct(); });
 })();
+
+/* ================= 360° maker (frames kept in IndexedDB on this phone) ================= */
+const idb = {
+  open() { return new Promise((res, rej) => { const r = indexedDB.open('mrk1', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); },
+  async run(mode, fn) { const db = await this.open(); return new Promise((res, rej) => { const tx = db.transaction('kv', mode); const q = fn(tx.objectStore('kv')); tx.oncomplete = () => res(q && q.result); tx.onerror = () => rej(tx.error); }); },
+  get(k) { return this.run('readonly', st => st.get(k)); },
+  set(k, v) { return this.run('readwrite', st => st.put(v, k)); },
+  del(k) { return this.run('readwrite', st => st.delete(k)); }
+};
+function spinMsg(t, kind = '') { const el = $('spinMsg'); if (el) { el.textContent = t; el.className = 'msg ' + kind; } }
+function spinInfo() { const el = $('spinInfo'); if (el) el.textContent = isSpin() ? `360° ready: ${spinFrames.length} frames saved on this phone.` : 'No 360° yet, so MRK1 shows the website photos (swipe to browse).'; }
+function useSpinBlobs(blobs) {
+  spinFrames.forEach(f => { try { URL.revokeObjectURL(f.src); } catch (e) {} });
+  spinFrames = blobs.map(b => mkImg(URL.createObjectURL(b)));
+  frameIdx = 0;
+  if (productOn) { setViewerLabels(); spin(0); }
+  spinInfo();
+}
+async function loadSpin() {
+  try {
+    const saved = await idb.get('spin');
+    if (saved && saved.length) useSpinBlobs(saved.map(f => new Blob([f.buf], { type: f.type || 'image/jpeg' })));
+  } catch (e) { /* no saved 360 */ }
+}
+const canvasBlob = c => new Promise(res => c.toBlob(res, 'image/jpeg', 0.82));
+function seekTo(v, t) {
+  return new Promise(res => {
+    const done = () => { v.removeEventListener('seeked', done); clearTimeout(to); setTimeout(res, 60); };
+    const to = setTimeout(done, 4000);
+    v.addEventListener('seeked', done);
+    v.currentTime = t;
+  });
+}
+async function framesFromVideo(file, n) {
+  const url = URL.createObjectURL(file);
+  const v = document.createElement('video');
+  v.muted = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.preload = 'auto';
+  v.style.cssText = 'position:fixed;left:0;top:0;width:2px;height:2px;opacity:.01;pointer-events:none';
+  document.body.appendChild(v);
+  try {
+    v.src = url;
+    await new Promise((res, rej) => {
+      v.onloadeddata = res; v.onerror = () => rej(new Error("Couldn't open that video."));
+      setTimeout(() => rej(new Error('The video took too long to open.')), 20000);
+    });
+    try { await v.play(); v.pause(); } catch (e) {}
+    const dur = v.duration;
+    if (!isFinite(dur) || dur < 2) throw new Error('That video is too short. Film 10 to 20 seconds.');
+    const k = Math.min(1, 720 / Math.max(v.videoWidth, v.videoHeight));
+    const c = document.createElement('canvas');
+    c.width = Math.round(v.videoWidth * k); c.height = Math.round(v.videoHeight * k);
+    const ctx = c.getContext('2d'), out = [];
+    for (let i = 0; i < n; i++) {
+      await seekTo(v, Math.min(dur - 0.05, dur * i / n + 0.02));
+      ctx.drawImage(v, 0, 0, c.width, c.height);
+      out.push(await canvasBlob(c));
+      spinMsg(`Making 360°… ${Math.round((i + 1) / n * 100)}%`);
+    }
+    return out;
+  } finally { v.remove(); URL.revokeObjectURL(url); }
+}
+async function framesFromPhotos(files) {
+  const list = files.slice().sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { numeric: true }));
+  const out = [];
+  for (let i = 0; i < list.length; i++) {
+    out.push(await canvasBlob(await loadImage(list[i])));
+    spinMsg(`Making 360°… ${i + 1} of ${list.length} photos`);
+  }
+  return out;
+}
+async function makeSpin(files) {
+  const video = files.find(f => /^video\//.test(f.type) || /\.(mov|mp4|m4v)$/i.test(f.name || ''));
+  const photos = files.filter(f => /^image\//.test(f.type));
+  try {
+    spinMsg('Making 360°…');
+    let blobs;
+    if (video) blobs = await framesFromVideo(video, 48);
+    else if (photos.length >= 8) blobs = await framesFromPhotos(photos);
+    else throw new Error('Pick one video, or at least 8 photos (24 to 36 is best).');
+    const saved = [];
+    for (const b of blobs) saved.push({ type: b.type, buf: await b.arrayBuffer() });
+    try { await idb.set('spin', saved); } catch (e) { throw new Error("Couldn't save the 360° on this phone (storage full or private browsing)."); }
+    useSpinBlobs(blobs);
+    spinMsg(`Done! ${blobs.length}-frame 360° saved. Tap "Show it now" to try it.`, 'ok');
+  } catch (e) { spinMsg(e.message || 'Something went wrong making the 360°.', 'bad'); }
+}
 
 /* ================= keep screen awake ================= */
 let wakeLock = null;
@@ -1206,8 +1314,8 @@ function syncForm() {
   $('model').value = S.model;
   $('pitch').value = S.pitch; $('rate').value = S.rate;
   $('threshold').value = S.threshold; $('thrVal').textContent = Number(S.threshold).toFixed(2);
-  ['greetStrangers', 'keepListening', 'scriptedPitch', 'subtitles', 'frame', 'flipGaze', 'logo', 'logoWhite'].forEach(k => { $(k).checked = !!S[k]; });
-  fillProductForm();
+  ['greetStrangers', 'keepListening', 'scriptedPitch', 'subtitles', 'frame', 'flipGaze', 'logo', 'logoWhite', 'spinLoop'].forEach(k => { $(k).checked = !!S[k]; });
+  fillProductForm(); spinInfo();
   logoMsg(logoData ? 'Using your own logo image.' : 'Using the logo from markselectrical.co.uk.');
   keyMsg(S.apiKey ? 'A key is saved on this phone.' : 'No key saved yet.', S.apiKey ? 'ok' : '');
 }
@@ -1258,7 +1366,7 @@ $('pitch').addEventListener('input', e => { S.pitch = Number(e.target.value); sa
 $('rate').addEventListener('input', e => { S.rate = Number(e.target.value); saveSettings(); });
 $('testVoice').addEventListener('click', () => speak("Hi! I'm MRK1. Is this voice cute enough?"));
 $('threshold').addEventListener('input', e => { S.threshold = Number(e.target.value); $('thrVal').textContent = S.threshold.toFixed(2); saveSettings(); });
-['greetStrangers', 'keepListening', 'scriptedPitch', 'subtitles', 'frame', 'flipGaze', 'logo', 'logoWhite'].forEach(k => {
+['greetStrangers', 'keepListening', 'scriptedPitch', 'subtitles', 'frame', 'flipGaze', 'logo', 'logoWhite', 'spinLoop'].forEach(k => {
   $(k).addEventListener('change', e => { S[k] = e.target.checked; saveSettings(); applyLook(); });
 });
 $('enrollCam').addEventListener('click', enrollFromCamera);
@@ -1278,6 +1386,12 @@ $('pfReset').addEventListener('click', () => {
   prod = JSON.parse(JSON.stringify(PRODUCT_EDITABLE)); saveProd(); fillProductForm(); renderProduct();
   pfMsg('Back to the website data from ' + PRODUCT.checked + '.', 'ok');
 });
+$('spinFile').addEventListener('change', e => { const f = Array.from(e.target.files || []); e.target.value = ''; if (f.length) makeSpin(f); });
+$('spinClear').addEventListener('click', async () => {
+  try { await idb.del('spin'); } catch (e) {}
+  useSpinBlobs([]); if (productOn) { setViewerLabels(); spin(0); }
+  spinMsg('360° removed. MRK1 will show the website photos.', 'ok');
+});
 $('logoFile').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) useLogoFile(f); e.target.value = ''; });
 $('logoReset').addEventListener('click', () => { logoData = ''; store.set('mrk1-logo', ''); applyLogo(); logoMsg('Using the logo from markselectrical.co.uk.', 'ok'); });
 $('btnSleep').addEventListener('click', () => { closeSettings(); stopSpeaking(); hideProduct(); setState('sleep'); });
@@ -1295,6 +1409,7 @@ function refreshWakeNotes() {
 if ('speechSynthesis' in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
 applyLook();
 applyLogo();
+loadSpin();
 refreshWakeNotes();
 })();
 </script>
